@@ -13,6 +13,7 @@ connectDB() ;
 app.use('/api/admin', require('./src/routes/adminRoutes'));
 app.use('/api/teacher', require('./src/routes/teacherRoutes') );
 app.use('/api/student', require('./src/routes/studentRoutes') );
+app.use('/api/class', require('./src/routes/classRoutes') );
 
 const PORT = process.env.PORT || 5000;
 

@@ -123,4 +123,25 @@ router.get('/export-csv', async (req, res) => {
   }
 });
 
+// ✅ GET TEACHER NAMES + SUBJECTS
+router.get('/list', async (req, res) => {
+  try {
+    const teachers = await Teacher.find(
+      {},
+      { name: 1, subjects: 1, _id: 0 }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: teachers
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
