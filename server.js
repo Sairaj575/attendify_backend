@@ -6,7 +6,10 @@ const connectDB = require('./src/config/db');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+}));
 app.use(express.json());
 connectDB() ;
 
@@ -19,6 +22,10 @@ app.use('/api/session', require('./src/routes/sessionRoutes'));
 app.use('/api/attendance', require('./src/routes/attendanceRoutes'));
 app.use('/api/student', require('./src/routes/studentDashboardRoutes'));
 app.use('/uploads', express.static('uploads'));
+app.get("/", (req, res) => {
+  res.send("Attendify Backend is running 🚀");
+});
+
 
 
 const PORT = process.env.PORT || 5000;
