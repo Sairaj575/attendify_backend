@@ -196,4 +196,173 @@ router.get('/export-csv', async (req, res) => {
 });
 
 
+const path = require('path');
+
+// 📌 Multer storage for student frames
+const frameStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const { studentId } = req.body;
+
+    if (!studentId) {
+      return cb(new Error("Student ID is required"), null);
+    }
+
+    const dir = `uploads/students/${studentId}`;
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    cb(null, dir);
+  },
+
+  filename: (req, file, cb) => {
+    const filename = `frame_${Date.now()}_${Math.floor(Math.random() * 1000)}.jpg`;
+    cb(null, filename);
+  }
+});
+
+const uploadFrames = multer({ storage: frameStorage });
+
+
+// ✅ ROUTE: STORE STUDENT FACE FRAMES
+router.post(
+  '/upload-frames',
+  uploadFrames.array('frames', 20), // max 20 frames
+  async (req, res) => {
+    try {
+      const { studentId } = req.body;
+
+      if (!studentId) {
+        return res.status(400).json({
+          message: "Student ID is required"
+        });
+      }
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({
+          message: "No frames uploaded"
+        });
+      }
+
+      res.status(200).json({
+        message: "Frames uploaded successfully",
+        studentId,
+        totalFrames: req.files.length
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        message: error.message
+      });
+    }
+  }
+);
+
+
+//upload profile pic
+const profileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = 'uploads/students/profile';
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    cb(null, dir);
+  },
+
+  filename: (req, file, cb) => {
+    const uniqueName =
+      'student_' + Date.now() + path.extname(file.originalname);
+    cb(null, uniqueName);
+  }
+});
+
+const uploadProfile = multer({
+  storage: profileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    if (
+      file.mimetype === 'image/jpeg' ||
+      file.mimetype === 'image/png'
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only JPG & PNG allowed"));
+    }
+  }
+});
+
+router.post(
+  '/upload-profile-photo/:studentId',
+  uploadProfile.single('photo'),
+  async (req, res) => {
+    try {
+      const { studentId } = req.params;
+
+      if (!req.file) {
+        return res.status(400).json({
+          message: "No photo uploaded"
+        });
+      }
+
+      const student = await Student.findById(studentId);
+
+      if (!student) {
+        return res.status(404).json({
+          message: "Student not found"
+        });
+      }
+
+      // Save image path to DB
+      student.photo = req.file.path;
+      await student.save();
+
+      res.status(200).json({
+        message: "Profile photo uploaded successfully",
+        photo: student.photo
+      });
+
+    } catch (error) {
+      res.status(500).json({
+        message: error.message
+      });
+    }
+  }
+);
+
+
+// ✅ GET STUDENT PROFILE DETAILS
+router.get('/profile/:studentId', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const student = await Student.findById(studentId).select(
+      'photo name branch rollNo phone email enrollmentNo'
+    );
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found"
+      });
+    }
+
+    res.status(200).json({
+      photo: student.photo,
+      name: student.name,
+      branch: student.branch,
+      rollNo: student.rollNo,
+      phone: student.phone,
+      email: student.email,
+      enrollmentNo: student.enrollmentNo
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
