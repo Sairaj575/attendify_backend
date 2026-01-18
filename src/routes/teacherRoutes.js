@@ -1,6 +1,8 @@
 const express = require('express');
 const Teacher = require('../models/Teacher');
 const multer = require('multer');
+const Session = require('../models/Session');
+const Attendance = require('../models/Attendance');
 const csv = require('csv-parser');
 const fs = require('fs');
 const router = express.Router();
@@ -141,6 +143,63 @@ router.get('/list', async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+});
+
+// ✅ TEACHER PROFILE
+router.get('/profile/:teacherId', async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+
+    // 1️⃣ Fetch teacher details
+    const teacher = await Teacher.findById(teacherId);
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    // 2️⃣ Total classes taken
+    const totalClasses = await Session.countDocuments({
+      teacherId
+    });
+
+    // 3️⃣ Total students taught
+    const sessions = await Session.find({ teacherId });
+
+    let totalStudents = 0;
+    sessions.forEach(s => {
+      totalStudents += s.totalStudents;
+    });
+
+    // 4️⃣ Attendance stats
+    const totalAttendance = await Attendance.countDocuments({
+      teacherId
+    });
+
+    const presentAttendance = await Attendance.countDocuments({
+      teacherId,
+      status: "Present"
+    });
+
+    const attendancePercentage =
+      totalAttendance === 0
+        ? 0
+        : ((presentAttendance / totalAttendance) * 100).toFixed(2);
+
+    // ✅ FINAL RESPONSE
+    res.status(200).json({
+      name: teacher.name,
+      post: teacher.post,
+      email: teacher.email,
+      phone: teacher.phone,
+      collegeName: teacher.collegeName,   // ✅ ADDED
+      totalClasses,
+      totalStudents,
+      attendancePercentage: `${attendancePercentage}%`
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
