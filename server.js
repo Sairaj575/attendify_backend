@@ -14,6 +14,9 @@ app.use('/api/admin', require('./src/routes/adminRoutes'));
 app.use('/api/teacher', require('./src/routes/teacherRoutes') );
 app.use('/api/student', require('./src/routes/studentRoutes') );
 app.use('/api/class', require('./src/routes/classRoutes') );
+app.use("/api/auth", require("./src/routes/auth.routes"));
+app.use('/api/session', require('./src/routes/sessionRoutes'));
+app.use("/api/attendence", require("./src/routes/attendanceRoutes"));
 
 const PORT = process.env.PORT || 5000;
 

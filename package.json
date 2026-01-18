@@ -20,7 +20,10 @@
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.4",
-    "multer": "^2.0.2"
+    "multer": "^2.0.2",
+    "qrcode": "^1.5.4",
+    "twilio": "^5.11.2",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
