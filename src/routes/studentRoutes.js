@@ -365,4 +365,38 @@ router.get('/profile/:studentId', async (req, res) => {
   }
 });
 
+
+
+const Class = require('../models/Class');
+
+
+// ✅ GET LOGGED-IN STUDENT BASIC INFO (NO SUBJECT)
+router.get('/basic-info/:studentId', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const student = await Student.findById(studentId).select(
+      'name rollNo class'
+    );
+
+    if (!student) {
+      return res.status(404).json({
+        message: "Student not found"
+      });
+    }
+
+    res.status(200).json({
+      name: student.name,
+      rollNo: student.rollNo,
+      class: student.class
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+});
+
+
 module.exports = router;
