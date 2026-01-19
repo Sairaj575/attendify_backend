@@ -5,13 +5,15 @@ const fs = require('fs');
 
 const Class = require('../models/Class');
 const Student = require('../models/Student');
+const Teacher = require('../models/Teacher');
 
 const router = express.Router();
 
 // Multer config
 const upload = multer({ dest: 'uploads/csv/' });
 
-// ✅ CREATE CLASS + TEACHERS + STUDENTS
+
+// ✅ CREATE CLASS + STUDENTS + AUTO ASSIGN TO TEACHERS
 router.post('/import-class', upload.single('file'), async (req, res) => {
   try {
     const { className, year, teachers } = req.body;
@@ -22,16 +24,17 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
       });
     }
 
+    // Parse teachers JSON
     let teacherList;
     try {
       teacherList = JSON.parse(teachers);
     } catch (err) {
       return res.status(400).json({
-        message: "Invalid teachers JSON"
+        message: "Invalid teachers JSON format"
       });
     }
 
-    // Check class exists
+    // Check if class already exists
     const exists = await Class.findOne({ className, year });
     if (exists) {
       return res.status(400).json({
@@ -39,9 +42,9 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
       });
     }
 
-    // ✅ READ CSV FIRST
     const rows = [];
 
+    // Read CSV
     fs.createReadStream(req.file.path)
       .pipe(csv())
       .on('data', (row) => {
@@ -51,7 +54,7 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
         try {
           const studentIds = [];
 
-          // ✅ NOW FETCH STUDENTS PROPERLY
+          // Fetch students from DB
           for (const row of rows) {
             const student = await Student.findOne({
               sisId: row.sisId
@@ -62,6 +65,7 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
             }
           }
 
+          // Create class
           const newClass = new Class({
             className,
             year,
@@ -70,14 +74,23 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
           });
 
           await newClass.save();
+
+          // ✅ AUTO ASSIGN CLASS TO TEACHERS
+          for (const t of teacherList) {
+            await Teacher.updateOne(
+              { name: t.teacherName },
+              { $addToSet: { classIds: newClass._id } }
+            );
+          }
+
           fs.unlinkSync(req.file.path);
 
           res.status(201).json({
-            message: "Class created successfully",
+            message: "Class created and assigned to teachers successfully",
             className,
             year,
             totalStudents: studentIds.length,
-            teachers: teacherList.length
+            teachersAssigned: teacherList.length
           });
 
         } catch (err) {
@@ -89,5 +102,35 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// ✅ GET STUDENTS OF A CLASS
+router.get('/students/:classId', async (req, res) => {
+  try {
+    const { classId } = req.params;
+
+    // 1️⃣ Find class and populate students
+    const classData = await Class.findById(classId)
+      .populate('students');
+
+    if (!classData) {
+      return res.status(404).json({
+        message: "Class not found"
+      });
+    }
+
+    res.status(200).json({
+      className: classData.className,
+      year: classData.year,
+      totalStudents: classData.students.length,
+      students: classData.students
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+});
+
 
 module.exports = router;
