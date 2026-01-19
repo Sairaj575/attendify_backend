@@ -1,32 +1,31 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
-const connectDB = require('./src/config/db');
-
+const express = require("express");
+const cors = require("cors");
+require("dotenv").config();
+const connectDB = require("./src/config/db");
 
 const app = express();
 
-app.use(cors({
-  origin: "*", 
-  methods: ["GET", "POST", "PUT", "DELETE"],
-}));
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  }),
+);
 app.use(express.json());
-connectDB() ;
+connectDB();
 
-app.use('/api/admin', require('./src/routes/adminRoutes'));
-app.use('/api/teacher', require('./src/routes/teacherRoutes') );
-app.use('/api/student', require('./src/routes/studentRoutes') );
-app.use('/api/class', require('./src/routes/classRoutes') );
-// app.use("/api/auth", require("./src/routes/auth.routes"));
-app.use('/api/session', require('./src/routes/sessionRoutes'));
-app.use('/api/attendance', require('./src/routes/attendanceRoutes'));
-app.use('/api/student', require('./src/routes/studentDashboardRoutes'));
-app.use('/uploads', express.static('uploads'));
+app.use("/api/admin", require("./src/routes/adminRoutes"));
+app.use("/api/teacher", require("./src/routes/teacherRoutes"));
+app.use("/api/student", require("./src/routes/studentRoutes"));
+app.use("/api/class", require("./src/routes/classRoutes"));
+app.use("/api/teacher", require("./src/routes/teacherAuth.routes"));
+app.use("/api/session", require("./src/routes/sessionRoutes"));
+app.use("/api/attendance", require("./src/routes/attendanceRoutes"));
+app.use("/api/student", require("./src/routes/studentDashboardRoutes"));
+app.use("/uploads", express.static("uploads"));
 app.get("/", (req, res) => {
   res.send("Attendify Backend is running 🚀");
 });
-
-
 
 const PORT = process.env.PORT || 5000;
 
