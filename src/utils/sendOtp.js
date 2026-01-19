@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-const twilio = require("twilio");
-
-const client = new twilio(
-  process.env.TWILIO_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
-
-const sendOtp = async (phone, otp) => {
-  await client.messages.create({
-    body: `Your OTP is ${otp}. Valid for 5 minutes.`,
-    from: process.env.TWILIO_PHONE,
-    to: phone
-  });
-=======
 // const axios = require("axios");
 
 // const sendOtp = async (phone, otp) => {
@@ -46,7 +31,6 @@ const sendOtp = async (phone, otp) => {
 
 const sendOtp = async (phone, otp) => {
   console.log(`DEV OTP for ${phone}: ${otp}`);
->>>>>>> 3c7e23ac363daf5710eed7dc3fc2c06b85d6cda0
 };
 
 module.exports = sendOtp;
