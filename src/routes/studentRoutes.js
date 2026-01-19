@@ -399,4 +399,61 @@ router.get('/basic-info/:studentId', async (req, res) => {
 });
 
 
+// ✅ EXPORT STUDENTS BY CLASS & YEAR
+router.get('/export-by-class-year', async (req, res) => {
+  try {
+    const { className, year } = req.query;
+
+    if (!className || !year) {
+      return res.status(400).json({
+        message: "className and year are required"
+      });
+    }
+
+    // Fetch students
+    const students = await Student.find({
+      class: className,
+      year: year
+    }).select(
+      'sisId name email phone class year rollNo enrollmentNo branch'
+    );
+
+    if (!students.length) {
+      return res.status(404).json({
+        message: "No students found for given class and year"
+      });
+    }
+
+    // Convert to CSV
+    const fields = [
+      'sisId',
+      'name',
+      'email',
+      'phone',
+      'class',
+      'year',
+      'rollNo',
+      'enrollmentNo',
+      'branch'
+    ];
+
+    const parser = new Parser({ fields });
+    const csv = parser.parse(students);
+
+    // Send file
+    res.header('Content-Type', 'text/csv');
+    res.header(
+      'Content-Disposition',
+      `attachment; filename=${className}_${year}_students.csv`
+    );
+
+    res.status(200).send(csv);
+
+  } catch (error) {
+    res.status(500).json({
+      message: error.message
+    });
+  }
+});
+
 module.exports = router;
