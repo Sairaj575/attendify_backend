@@ -4,6 +4,12 @@ const classSchema = new mongoose.Schema(
   {
     className: {
       type: String,
+      required: true,
+      trim: true
+    },
+
+    year: {
+      type: String,
       required: true
     },
 
@@ -18,9 +24,18 @@ const classSchema = new mongoose.Schema(
           required: true
         }
       }
+    ],
+
+    students: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Student"
+      }
     ]
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
 module.exports = mongoose.model('Class', classSchema);
