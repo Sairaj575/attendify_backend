@@ -22,17 +22,16 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
       });
     }
 
-    // Parse teachers JSON
     let teacherList;
     try {
       teacherList = JSON.parse(teachers);
     } catch (err) {
       return res.status(400).json({
-        message: "Invalid teachers JSON format"
+        message: "Invalid teachers JSON"
       });
     }
 
-    // Check class already exists
+    // Check class exists
     const exists = await Class.findOne({ className, year });
     if (exists) {
       return res.status(400).json({
@@ -40,37 +39,50 @@ router.post('/import-class', upload.single('file'), async (req, res) => {
       });
     }
 
-    const studentIds = [];
+    // ✅ READ CSV FIRST
+    const rows = [];
 
     fs.createReadStream(req.file.path)
       .pipe(csv())
-      .on('data', async (row) => {
-        const student = await Student.findOne({
-          sisId: row.sisId
-        });
-
-        if (student) {
-          studentIds.push(student._id);
-        }
+      .on('data', (row) => {
+        rows.push(row);
       })
       .on('end', async () => {
-        const newClass = new Class({
-          className,
-          year,
-          teachers: teacherList,
-          students: studentIds
-        });
+        try {
+          const studentIds = [];
 
-        await newClass.save();
-        fs.unlinkSync(req.file.path);
+          // ✅ NOW FETCH STUDENTS PROPERLY
+          for (const row of rows) {
+            const student = await Student.findOne({
+              sisId: row.sisId
+            });
 
-        res.status(201).json({
-          message: "Class created successfully",
-          className,
-          year,
-          totalStudents: studentIds.length,
-          teachers: teacherList.length
-        });
+            if (student) {
+              studentIds.push(student._id);
+            }
+          }
+
+          const newClass = new Class({
+            className,
+            year,
+            teachers: teacherList,
+            students: studentIds
+          });
+
+          await newClass.save();
+          fs.unlinkSync(req.file.path);
+
+          res.status(201).json({
+            message: "Class created successfully",
+            className,
+            year,
+            totalStudents: studentIds.length,
+            teachers: teacherList.length
+          });
+
+        } catch (err) {
+          res.status(500).json({ message: err.message });
+        }
       });
 
   } catch (error) {
