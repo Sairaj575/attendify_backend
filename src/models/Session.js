@@ -7,7 +7,7 @@ const sessionSchema = new mongoose.Schema(
       required: true
     },
 
-    classId: {                         // ✅ ADD
+    classId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Class",
       required: true
@@ -18,18 +18,12 @@ const sessionSchema = new mongoose.Schema(
       required: true
     },
 
-    subjectId: {                       // ✅ ADD
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject",
-      required: true
-    },
-
     teacherName: {
       type: String,
       required: true
     },
 
-    teacherId: {                       // ✅ ADD
+    teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
       required: true

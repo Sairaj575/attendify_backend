@@ -11,7 +11,7 @@ router.get('/details/:teacherName', async (req, res) => {
   try {
     const { teacherName } = req.params;
 
-    // 1️⃣ Find class & subject for this teacher
+    // 1️⃣ Find class
     const classData = await Class.findOne({
       "teachers.teacherName": teacherName
     });
@@ -22,30 +22,47 @@ router.get('/details/:teacherName', async (req, res) => {
       });
     }
 
-    // Extract subject of this teacher
+    // 2️⃣ Get teacher subject
     const teacherData = classData.teachers.find(
       t => t.teacherName === teacherName
     );
 
-    const subject = teacherData.subject;
-    const className = classData.className;
+    if (!teacherData) {
+      return res.status(404).json({
+        message: "Teacher not found in class"
+      });
+    }
 
-    // 2️⃣ Count students in that class
+    const subject = teacherData.subject;
+
+    // 3️⃣ Count students
     const totalStudents = await Student.countDocuments({
-      class: className
+      class: classData.className
     });
 
-    // 3️⃣ Get lecture number (auto increment)
+    // 4️⃣ Get next lecture number
     const lastSession = await Session.findOne({
-      className,
+      className: classData.className,
       subject
     }).sort({ lectureNo: -1 });
 
     const lectureNo = lastSession ? lastSession.lectureNo + 1 : 1;
 
+    // ✅ 5️⃣ CREATE SESSION
+    const newSession = await Session.create({
+      className: classData.className,
+      classId: classData._id,
+      subject,
+      teacherName,
+      teacherId: teacherData._id || null,
+      totalStudents,
+      lectureNo
+    });
+
     // ✅ FINAL RESPONSE
     res.status(200).json({
-      className,
+      sessionId: newSession._id,
+      className: classData.className,
       subject,
       teacherName,
       totalStudents,
@@ -58,6 +75,7 @@ router.get('/details/:teacherName', async (req, res) => {
     });
   }
 });
+
 
 // ✅ GENERATE QR + CODE FOR ATTENDANCE
 router.get('/generate-qr/:sessionId', async (req, res) => {
